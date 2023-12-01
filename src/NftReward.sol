@@ -4,18 +4,29 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 
 /**
  * @title NFT reward contract
  * @notice Allows NFT minter to sign off-chain mint requests for target users
  * who can later claim NFTs by minter's signature
  */
-contract NftReward is ERC721, Ownable, Pausable {
+contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     /// @notice Base URI used for all of the tokens
     string public baseUri;
 
     /// @notice Minter address who will sign off-chain mint requests
     address public minter;
+
+    /// @notice Total amount of minted tokens
+    uint256 public tokenIdCounter;
+
+    /// @notice Mint request signed by minter
+    struct MintRequest {
+        // address which is eligible for minting NFT
+        address beneficiary;
+    }
 
     /**
      * @notice Contract constructor
@@ -32,8 +43,62 @@ contract NftReward is ERC721, Ownable, Pausable {
     ) 
         ERC721(_tokenName, _tokenSymbol) 
         Ownable(_initialOwner)
+        EIP712("NftReward-Domain", "1")
     {
         minter = _minter;
+    }
+
+    //==================
+    // Public methods
+    //==================
+
+    /**
+     * @notice Returns mint request digest which should be signed by `minter`
+     * @param _mintRequest Mint request data
+     * @return Mint request digest which should be signed by `minter`
+     */
+    function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
+        return _hashTypedDataV4(keccak256(abi.encode(
+            keccak256("MintRequest(address beneficiary"),
+            _mintRequest.beneficiary
+        )));
+    }
+
+    /**
+     * @notice Returns signer of the mint request
+     * @param _mintRequest Mint request data
+     * @param _signature Minter signature
+     * @return Signer of the mint request
+     */
+    function recover(
+        MintRequest calldata _mintRequest, 
+        bytes calldata _signature
+    ) 
+        public 
+        view 
+        returns (address) 
+    {
+        bytes32 digest = getMintRequestDigest(_mintRequest);
+        address signer = ECDSA.recover(digest, _signature);
+        return signer;
+    }
+
+    /**
+     * @notice Mints a reward NFT to beneficiary who provided a mint request with valid minter's signature
+     * @param _mintRequest Mint request data
+     * @param _signature Minter signature
+     */
+    function safeMint(
+        MintRequest calldata _mintRequest,
+        bytes calldata _signature
+    ) public {
+        // validation
+        require(recover(_mintRequest, _signature) == minter, "Signed not by minter");
+        require(msg.sender == _mintRequest.beneficiary, "Not eligible");      
+        // mint token to beneficiary
+        _safeMint(_mintRequest.beneficiary, tokenIdCounter);
+        // increase token counter
+        tokenIdCounter++;
     }
 
     //=================
