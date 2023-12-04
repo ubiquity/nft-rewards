@@ -1,0 +1,11 @@
+{
+  "name": "nft-rewards",
+  "version": "1.0.0",
+  "repository": "https://github.com/ubiquity/nft-rewards.git",
+  "author": "Ubiquity DAO",
+  "license": "MIT",
+  "scripts": {
+    "deploy": "script/deploy.sh",
+    "test": "forge test"
+  }
+}
