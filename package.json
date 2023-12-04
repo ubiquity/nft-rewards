@@ -7,6 +7,10 @@
   "scripts": {
     "deploy:dev": "script/deploy_dev.sh",
     "deploy:prod": "script/deploy_prod.sh",
+    "sign-and-redeem": "npx tsx js/sign-and-redeem-mint-request.ts",
     "test": "forge test"
+  },
+  "dependencies": {
+    "ethers": "5"
   }
 }

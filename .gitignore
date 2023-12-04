@@ -12,3 +12,6 @@ docs/
 
 # Dotenv file
 .env
+
+# 3rd party dependencies
+node_modules
