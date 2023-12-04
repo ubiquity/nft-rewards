@@ -32,7 +32,8 @@ contract NftRewardTest is Test {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp + 1
+            deadline: block.timestamp + 1,
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -49,7 +50,8 @@ contract NftRewardTest is Test {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp + 1
+            deadline: block.timestamp + 1,
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -67,7 +69,8 @@ contract NftRewardTest is Test {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp + 1
+            deadline: block.timestamp + 1,
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -86,7 +89,8 @@ contract NftRewardTest is Test {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp + 1
+            deadline: block.timestamp + 1,
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -104,7 +108,8 @@ contract NftRewardTest is Test {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp - 1 // set expired signature
+            deadline: block.timestamp - 1, // set expired signature
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -118,11 +123,86 @@ contract NftRewardTest is Test {
         nftReward.safeMint(mintRequest, signature);
     }
 
+    function testSafeMint_ShouldRevert_IfNonceAlreadyUsed() public {
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            nonce: 1
+        });
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+        // minter signs mint request digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
+        // get minter's signature
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // user1 mints
+        vm.prank(user1);
+        nftReward.safeMint(mintRequest, signature);
+
+        // user1 tries to mint 1 more time
+        vm.prank(user1);
+        vm.expectRevert("Already minted");
+        nftReward.safeMint(mintRequest, signature);
+    }
+
+    function testSafeMint_ShouldRevert_OnOtherUserSignatureReuse() public {
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            nonce: 1
+        });
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+        // minter signs mint request digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
+        // get minter's signature
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // user2 tries to mint using signature for user1
+        NftReward.MintRequest memory mintRequestForged = NftReward.MintRequest({
+            beneficiary: user2,
+            deadline: block.timestamp + 1,
+            nonce: 1
+        });
+        vm.prank(user2);
+        vm.expectRevert("Signed not by minter");
+        nftReward.safeMint(mintRequestForged, signature);
+    }
+
+    function testSafeMint_ShouldRevert_OnOwnSignatureReuse() public {
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            nonce: 1
+        });
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+        // minter signs mint request digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
+        // get minter's signature
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // user1 tries to mint using own signature
+        NftReward.MintRequest memory mintRequestForged = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            nonce: 2
+        });
+        vm.prank(user1);
+        vm.expectRevert("Signed not by minter");
+        nftReward.safeMint(mintRequestForged, signature);
+    }
+
     function testSafeMint_ShouldMint() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
             beneficiary: user1,
-            deadline: block.timestamp + 1
+            deadline: block.timestamp + 1,
+            nonce: 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -136,12 +216,14 @@ contract NftRewardTest is Test {
         // before
         vm.expectRevert();
         nftReward.ownerOf(tokenId);
+        assertEq(nftReward.nonceRedeemed(1), false);
 
         // user1 mints
         vm.prank(user1);
         nftReward.safeMint(mintRequest, signature);
 
         // after
+        assertEq(nftReward.nonceRedeemed(1), true);
         assertEq(nftReward.ownerOf(tokenId), user1);
         assertEq(nftReward.tokenIdCounter(), 1);
     }

@@ -19,6 +19,9 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     /// @notice Minter address who will sign off-chain mint requests
     address public minter;
 
+    /// @notice Mapping to check whether nonce is redeemed 
+    mapping (uint256 => bool) public nonceRedeemed;
+
     /// @notice Total amount of minted tokens
     uint256 public tokenIdCounter;
 
@@ -28,6 +31,8 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         address beneficiary;
         // unix timestamp until mint request is valid
         uint256 deadline;
+        // unique number used to prevent mint request reusage
+        uint256 nonce;
     }
 
     /**
@@ -61,9 +66,10 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
      */
     function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("MintRequest(address beneficiary,uint256 deadline"),
+            keccak256("MintRequest(address beneficiary,uint256 deadline,uint256 nonce"),
             _mintRequest.beneficiary,
-            _mintRequest.deadline
+            _mintRequest.deadline,
+            _mintRequest.nonce
         )));
     }
 
@@ -98,7 +104,10 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         // validation
         require(recover(_mintRequest, _signature) == minter, "Signed not by minter");
         require(msg.sender == _mintRequest.beneficiary, "Not eligible");   
-        require(block.timestamp < _mintRequest.deadline, "Signature expired");   
+        require(block.timestamp < _mintRequest.deadline, "Signature expired");
+        require(!nonceRedeemed[_mintRequest.nonce], "Already minted");
+        // mark nonce as used
+        nonceRedeemed[_mintRequest.nonce] = true;
         // mint token to beneficiary
         _safeMint(_mintRequest.beneficiary, tokenIdCounter);
         // increase token counter
