@@ -28,6 +28,53 @@ contract NftRewardTest is Test {
     // Public methods
     //==================
 
+    function testGetTokenDataKeys_ReturnAllTokenDataKeys() public {
+        // prepare arbitrary data keys
+        bytes32[] memory keys = new bytes32[](2);
+        keys[0] = keccak256("GITHUB_ORGANIZATION_NAME"); 
+        keys[1] = keccak256("GITHUB_REPOSITORY_NAME"); 
+        // prepare arbitrary data values
+        string[] memory values = new string[](2);
+        values[0] = "ubiquity";
+        values[1] = "nft-rewards";
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            keys: keys,
+            nonce: 1,
+            values: values
+        });
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+        // minter signs mint request digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
+        // get minter's signature
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        // user1 mints
+        vm.prank(user1);
+        nftReward.safeMint(mintRequest, signature);
+
+        // minter updates mint request with new token data key
+        mintRequest.keys[1] = keccak256("GITHUB_ISSUE_ID");
+        mintRequest.values[1] = "1";
+        mintRequest.nonce = 2;
+        digest = nftReward.getMintRequestDigest(mintRequest);
+        (v, r, s) = vm.sign(minterPrivateKey, digest);
+        signature = abi.encodePacked(r, s, v);
+
+        // user1 mints again
+        vm.prank(user1);
+        nftReward.safeMint(mintRequest, signature);
+
+        bytes32[] memory tokenDataKeys = nftReward.getTokenDataKeys();
+        assertEq(tokenDataKeys.length, 3);
+        assertEq(tokenDataKeys[0], keccak256("GITHUB_ORGANIZATION_NAME"));
+        assertEq(tokenDataKeys[1], keccak256("GITHUB_REPOSITORY_NAME"));
+        assertEq(tokenDataKeys[2], keccak256("GITHUB_ISSUE_ID"));
+    }
+
     function testRecover_ShouldReturnMinterAddress_IfDigestIsSignedByMinter() public {
         // prepare arbitrary data keys
         bytes32[] memory keys = new bytes32[](1);
@@ -378,6 +425,7 @@ contract NftRewardTest is Test {
         vm.expectRevert();
         nftReward.ownerOf(tokenId);
         assertEq(nftReward.nonceRedeemed(1), false);
+        assertEq(nftReward.tokenDataKeyExists(keccak256("GITHUB_ORGANIZATION_NAME")), false);
 
         // user1 mints
         vm.prank(user1);
@@ -385,6 +433,8 @@ contract NftRewardTest is Test {
 
         // after
         assertEq(nftReward.nonceRedeemed(1), true);
+        assertEq(nftReward.tokenDataKeys(0), keccak256("GITHUB_ORGANIZATION_NAME"));
+        assertEq(nftReward.tokenDataKeyExists(keccak256("GITHUB_ORGANIZATION_NAME")), true);
         assertEq(nftReward.ownerOf(tokenId), user1);
         assertEq(nftReward.tokenIdCounter(), 1);
         assertEq(nftReward.tokenData(0, keccak256("GITHUB_ORGANIZATION_NAME")), "ubiquity");

@@ -25,6 +25,12 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     /// @notice Arbitrary token data
     mapping (uint256 tokenId => mapping(bytes32 key => string value)) public tokenData;
 
+    /// @notice Array of all arbitraty token data keys (useful for UI)
+    bytes32[] public tokenDataKeys;
+
+    /// @notice Mapping to check whether token data key exists
+    mapping(bytes32 tokenDataKey => bool isTokenDataKeyExists) public tokenDataKeyExists;
+
     /// @notice Total amount of minted tokens
     uint256 public tokenIdCounter;
 
@@ -83,6 +89,14 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     }
 
     /**
+     * @notice Returns all arbitrary token data keys (useful for UI)
+     * @return Array of all arbitrary token data keys
+     */
+    function getTokenDataKeys() public view returns(bytes32[] memory) {
+        return tokenDataKeys;
+    }
+
+    /**
      * @notice Returns signer of the mint request
      * @param _mintRequest Mint request data
      * @param _signature Minter signature
@@ -116,15 +130,25 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         require(block.timestamp < _mintRequest.deadline, "Signature expired");
         require(!nonceRedeemed[_mintRequest.nonce], "Already minted");
         require(_mintRequest.keys.length == _mintRequest.values.length, "Key/value length mismatch");
+        
         // mark nonce as used
         nonceRedeemed[_mintRequest.nonce] = true;
+        
         // save arbitrary token data
         uint256 keysCount = _mintRequest.keys.length;
         for (uint256 i = 0; i < keysCount; i++) {
+            // save data
             tokenData[tokenIdCounter][_mintRequest.keys[i]] = _mintRequest.values[i];
+            // save arbitrary token data key if not saved yet
+            if (!tokenDataKeyExists[_mintRequest.keys[i]]) {
+                tokenDataKeys.push(_mintRequest.keys[i]);
+                tokenDataKeyExists[_mintRequest.keys[i]] = true;
+            }
         }
+        
         // mint token to beneficiary
         _safeMint(_mintRequest.beneficiary, tokenIdCounter);
+        
         // increase token counter
         tokenIdCounter++;
     }
