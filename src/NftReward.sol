@@ -20,7 +20,10 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     address public minter;
 
     /// @notice Mapping to check whether nonce is redeemed 
-    mapping (uint256 => bool) public nonceRedeemed;
+    mapping (uint256 nonce => bool isRedeemed) public nonceRedeemed;
+
+    /// @notice Arbitrary token data
+    mapping (uint256 tokenId => mapping(bytes32 key => string value)) public tokenData;
 
     /// @notice Total amount of minted tokens
     uint256 public tokenIdCounter;
@@ -31,8 +34,12 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         address beneficiary;
         // unix timestamp until mint request is valid
         uint256 deadline;
+        // array of arbitrary data keys
+        bytes32[] keys;
         // unique number used to prevent mint request reusage
         uint256 nonce;
+        // array of arbitrary data values
+        string[] values;
     }
 
     /**
@@ -66,10 +73,12 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
      */
     function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("MintRequest(address beneficiary,uint256 deadline,uint256 nonce"),
+            keccak256("MintRequest(address beneficiary,uint256 deadline,bytes32[] keys,uint256 nonce,string[] values"),
             _mintRequest.beneficiary,
             _mintRequest.deadline,
-            _mintRequest.nonce
+            _mintRequest.keys,
+            _mintRequest.nonce,
+            _mintRequest.values
         )));
     }
 
@@ -106,8 +115,14 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         require(msg.sender == _mintRequest.beneficiary, "Not eligible");   
         require(block.timestamp < _mintRequest.deadline, "Signature expired");
         require(!nonceRedeemed[_mintRequest.nonce], "Already minted");
+        require(_mintRequest.keys.length == _mintRequest.values.length, "Key/value length mismatch");
         // mark nonce as used
         nonceRedeemed[_mintRequest.nonce] = true;
+        // save arbitrary token data
+        uint256 keysCount = _mintRequest.keys.length;
+        for (uint256 i = 0; i < keysCount; i++) {
+            tokenData[tokenIdCounter][_mintRequest.keys[i]] = _mintRequest.values[i];
+        }
         // mint token to beneficiary
         _safeMint(_mintRequest.beneficiary, tokenIdCounter);
         // increase token counter
