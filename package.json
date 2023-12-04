@@ -5,7 +5,8 @@
   "author": "Ubiquity DAO",
   "license": "MIT",
   "scripts": {
-    "deploy": "script/deploy.sh",
+    "deploy:dev": "script/deploy_dev.sh",
+    "deploy:prod": "script/deploy_prod.sh",
     "test": "forge test"
   }
 }
