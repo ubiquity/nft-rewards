@@ -31,7 +31,8 @@ contract NftRewardTest is Test {
     function testRecover_ShouldReturnMinterAddress_IfDigestIsSignedByMinter() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1
+            beneficiary: user1,
+            deadline: block.timestamp + 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -47,7 +48,8 @@ contract NftRewardTest is Test {
     function testRecover_ShouldReturnSomeOtherAddress_IfDigestIsNotSignedByMinter() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1
+            beneficiary: user1,
+            deadline: block.timestamp + 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -64,7 +66,8 @@ contract NftRewardTest is Test {
     function testSafeMint_ShouldRevert_IfDigestIsNotSignedByMinter() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1
+            beneficiary: user1,
+            deadline: block.timestamp + 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -82,7 +85,8 @@ contract NftRewardTest is Test {
     function testSafeMint_ShouldRevert_IfBeneficiaryIsNotEligibleForCurrentNft() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1
+            beneficiary: user1,
+            deadline: block.timestamp + 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
@@ -96,10 +100,29 @@ contract NftRewardTest is Test {
         nftReward.safeMint(mintRequest, signature);
     }
 
+    function testSafeMint_ShouldRevert_IfSignatureExpired() public {
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp - 1 // set expired signature
+        });
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+        // minter signs mint request digest
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
+        // get minter's signature
+        bytes memory signature = abi.encodePacked(r, s, v);
+
+        vm.prank(user1);
+        vm.expectRevert('Signature expired');
+        nftReward.safeMint(mintRequest, signature);
+    }
+
     function testSafeMint_ShouldMint() public {
         // prepare mint request
         NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1
+            beneficiary: user1,
+            deadline: block.timestamp + 1
         });
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);

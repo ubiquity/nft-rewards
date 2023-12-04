@@ -26,6 +26,8 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     struct MintRequest {
         // address which is eligible for minting NFT
         address beneficiary;
+        // unix timestamp until mint request is valid
+        uint256 deadline;
     }
 
     /**
@@ -59,8 +61,9 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
      */
     function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("MintRequest(address beneficiary"),
-            _mintRequest.beneficiary
+            keccak256("MintRequest(address beneficiary,uint256 deadline"),
+            _mintRequest.beneficiary,
+            _mintRequest.deadline
         )));
     }
 
@@ -94,7 +97,8 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     ) public {
         // validation
         require(recover(_mintRequest, _signature) == minter, "Signed not by minter");
-        require(msg.sender == _mintRequest.beneficiary, "Not eligible");      
+        require(msg.sender == _mintRequest.beneficiary, "Not eligible");   
+        require(block.timestamp < _mintRequest.deadline, "Signature expired");   
         // mint token to beneficiary
         _safeMint(_mintRequest.beneficiary, tokenIdCounter);
         // increase token counter
