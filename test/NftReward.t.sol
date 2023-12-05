@@ -28,6 +28,28 @@ contract NftRewardTest is Test {
     // Public methods
     //==================
 
+    function testGetMintRequestDigest_ShouldReturnDigestToSign() public {
+        // prepare arbitrary data keys
+        bytes32[] memory keys = new bytes32[](1);
+        keys[0] = keccak256("GITHUB_ORGANIZATION_NAME"); 
+        // prepare arbitrary data values
+        string[] memory values = new string[](1);
+        values[0] = "ubiquity";
+        // prepare mint request
+        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
+            beneficiary: user1,
+            deadline: block.timestamp + 1,
+            keys: keys,
+            nonce: 1,
+            values: values
+        });
+
+        // get mint request digest which should be signed
+        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
+
+        assertEq(digest, 0xddc32c7e599cc39e82377aa8b3feaf2b2c178e5a1883bed3b11bb3b563698fc7);
+    }
+
     function testGetTokenDataKeys_ReturnAllTokenDataKeys() public {
         // prepare arbitrary data keys
         bytes32[] memory keys = new bytes32[](2);
@@ -438,5 +460,61 @@ contract NftRewardTest is Test {
         assertEq(nftReward.ownerOf(tokenId), user1);
         assertEq(nftReward.tokenIdCounter(), 1);
         assertEq(nftReward.tokenData(0, keccak256("GITHUB_ORGANIZATION_NAME")), "ubiquity");
+    }
+
+    //=================
+    // Owner methods
+    //=================
+
+    function testPause_ShouldPauseContract() public {
+        // before
+        assertFalse(nftReward.paused());
+
+        // owner pauses contract
+        vm.prank(owner);
+        nftReward.pause();
+
+        // after
+        assertTrue(nftReward.paused());
+    }
+
+    function testSetBaseUri_ShouldSetBaseUri() public {
+        // before
+        assertEq(nftReward.baseUri(), '');
+
+        // owner sets base URI
+        vm.prank(owner);
+        nftReward.setBaseUri('https://website/com/');
+
+        // after
+        assertEq(nftReward.baseUri(), 'https://website/com/');
+    }
+
+    function testSetMinter_ShouldSetMinterAddress() public {
+        // before
+        assertEq(nftReward.minter(), minter);
+
+        // owner sets new minter
+        vm.prank(owner);
+        nftReward.setMinter(user1);
+
+        // after
+        assertEq(nftReward.minter(), user1);
+    }
+
+    function testUnpause_ShouldUnpauseContract() public {
+        // owner pauses contract
+        vm.prank(owner);
+        nftReward.pause();
+
+        // before
+        assertTrue(nftReward.paused());
+
+        // owner unpauses contract
+        vm.prank(owner);
+        nftReward.unpause();
+
+        // after
+        assertFalse(nftReward.paused());
     }
 }
