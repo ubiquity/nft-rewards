@@ -4,7 +4,7 @@
 
 ## Deployed contract
 
-https://gnosisscan.io/address/0x408fcb8275974b5ac35cf8904c15fc4adb1d916a
+https://gnosisscan.io/address/0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b
 
 ## How it works
 1. Minter signs an off-chain mint request for a target user
