@@ -129,7 +129,10 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     function safeMint(
         MintRequest calldata _mintRequest,
         bytes calldata _signature
-    ) public {
+    ) 
+        public
+        whenNotPaused
+    {
         // validation
         require(recover(_mintRequest, _signature) == minter, "Signed not by minter");
         require(msg.sender == _mintRequest.beneficiary, "Not eligible");   
