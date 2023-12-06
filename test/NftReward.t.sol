@@ -47,7 +47,7 @@ contract NftRewardTest is Test {
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
 
-        assertEq(digest, 0xddc32c7e599cc39e82377aa8b3feaf2b2c178e5a1883bed3b11bb3b563698fc7);
+        assertEq(digest, 0x2c680706f2350ed5622f229af6736cd20626f7b9b4569b2fd5abb7e086886dc3);
     }
 
     function testGetTokenDataKeys_ReturnAllTokenDataKeys() public {

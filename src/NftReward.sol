@@ -78,13 +78,19 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
      * @return Mint request digest which should be signed by `minter`
      */
     function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
+        // for `string[]` array type we need to hash all the array values first
+        bytes32[] memory valuesHashed = new bytes32[](_mintRequest.values.length);
+        for (uint256 i = 0; i < _mintRequest.values.length; i++) {
+            valuesHashed[i] = keccak256(bytes(_mintRequest.values[i]));
+        }
+        // return final hash
         return _hashTypedDataV4(keccak256(abi.encode(
-            keccak256("MintRequest(address beneficiary,uint256 deadline,bytes32[] keys,uint256 nonce,string[] values"),
+            keccak256("MintRequest(address beneficiary,uint256 deadline,bytes32[] keys,uint256 nonce,string[] values)"),
             _mintRequest.beneficiary,
             _mintRequest.deadline,
-            _mintRequest.keys,
+            keccak256(abi.encodePacked(_mintRequest.keys)),
             _mintRequest.nonce,
-            _mintRequest.values
+            keccak256(abi.encodePacked(valuesHashed))
         )));
     }
 
