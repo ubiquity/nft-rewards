@@ -48,6 +48,10 @@ yarn deploy:dev # deploys contracts WITHOUT source code verifying
 yarn deploy:prod # deploys contracts WITH source code verifying (`ETHERSCAN_API_KEY` env variable must be set)
 ```
 
+## How to use
+
+Example js: https://github.com/ubiquity/nft-rewards/blob/7d9495bcdedae9304fdaa66a9d62cdf31fad50d0/js/sign-and-redeem-mint-request.ts
+
 ## How to run tests
 
 ```
