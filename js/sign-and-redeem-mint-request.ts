@@ -1,6 +1,7 @@
 /**
- * TODO: desc how it works
- * 
+ * Example script that shows:
+ * - signing an NFT mint request (by ubiquibot for example)
+ * - minting an NFT using minter's (i.e. ubiquibot's) signature (by collaborator for example)
  */
 
 import { ethers, utils } from "ethers";
@@ -9,7 +10,7 @@ import NftRewardArtifact from "../out/NftReward.sol/NftReward.json";
 // PK of address eligible for claiming NFT, set to any PK you want to mint NFT to
 const BENEFICIARY_PRIVATE_KEY = '';
 // PK of minter address who signs off-chain mint requests that target users can later use to mint NFTs
-// DM me for test minter PK for this contract https://gnosisscan.io/address/0x408fcb8275974b5ac35cf8904c15fc4adb1d916a
+// DM me for test minter PK for this contract https://gnosisscan.io/address/0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b
 const MINTER_PRIVATE_KEY = '';
 
 // EIP-721 domain name, can be taken from contract source
@@ -19,8 +20,8 @@ const SIGNING_DOMAIN_NAME = 'NftReward-Domain';
 // https://github.com/ubiquity/nft-rewards/blob/12f72c3a84d2d73a624bbb0f596613de4d277d4e/src/NftReward.sol#L66 
 const SIGNING_DOMAIN_VERSION = '1';
 // contract address that verifies mint request (i.e. NftReward address)
-// https://gnosisscan.io/address/0x408fcb8275974b5ac35cf8904c15fc4adb1d916a
-const VERIFYING_CONTRACT_ADDRESS = '0x408fcB8275974b5AC35cF8904C15fc4aDb1D916A';
+// https://gnosisscan.io/address/0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b
+const VERIFYING_CONTRACT_ADDRESS = '0xAa1bfC0e51969415d64d6dE74f27CDa0587e645b';
 // chain id, gnosis for this example
 const CHAIN_ID = 100;
 // RPC URL, gnosis used for this example
@@ -74,9 +75,7 @@ async function run() {
         const nftRewardContract = new ethers.Contract(VERIFYING_CONTRACT_ADDRESS, NftRewardArtifact.abi, beneficiaryWallet);
 
         // beneficiary redeems NFT
-        const receipt = await nftRewardContract.safeMint(mintRequest, signature, {
-            gasLimit: 400_000,
-        });
+        const receipt = await nftRewardContract.safeMint(mintRequest, signature);
     
         console.log(receipt);
     } catch (err) {
