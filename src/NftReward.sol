@@ -156,10 +156,7 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         }
         
         // mint token to beneficiary
-        _safeMint(_mintRequest.beneficiary, tokenIdCounter);
-        
-        // increase token counter
-        tokenIdCounter++;
+        _safeMint(_mintRequest.beneficiary, tokenIdCounter++);
     }
 
     //=================
