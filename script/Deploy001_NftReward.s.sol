@@ -13,13 +13,12 @@ contract Deploy001_NftReward is Script {
         string memory nftTokenName = vm.envString("NFT_TOKEN_NAME");
         string memory nftTokenSymbol = vm.envString("NFT_TOKEN_SYMBOL");
         uint256 ownerPrivateKey = vm.envUint("OWNER_PRIVATE_KEY");
-        // bytes32 salt = vm.envBytes32("SALT");
+        bytes32 salt = bytes32(bytes(vm.envString("SALT")));
         address ownerAddress = vm.addr(ownerPrivateKey);
 
         // start sending owner transactions
         vm.startBroadcast(ownerPrivateKey);
-        //Enter the your salt here
-        bytes32 salt = "694204353";
+
         // deploy NftReward
         nftReward = new NftReward{salt: salt}(
             nftTokenName, // token name
