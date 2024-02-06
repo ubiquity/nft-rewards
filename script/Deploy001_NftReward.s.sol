@@ -6,7 +6,7 @@ import {NftReward} from "../src/NftReward.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract Deploy001_NftReward is Script {
-    function run() external returns(address) {
+    function run() public returns(address) {
         // deploy NftReward contract
         address proxy = deployNftReward();
         return proxy;
