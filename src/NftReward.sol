@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title NFT reward contract
  * @notice Allows NFT minter to sign off-chain mint requests for target users
  * who can later claim NFTs by minter's signature
  */
-contract NftReward is ERC721, Ownable, Pausable, EIP712 {
+contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Pausable, EIP712Upgradeable, UUPSUpgradeable {
     /// @notice Base URI used for all of the tokens
     string public baseUri;
 
@@ -50,22 +50,25 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
     }
 
     /**
-     * @notice Contract constructor
+     * @notice Contract initializer (replaces constructor)
      * @param _tokenName NFT token name
      * @param _tokenSymbol NFT token symbol
      * @param _initialOwner Initial owner name
      * @param _minter Minter address
      */
-    constructor (
+    function initialize(
         string memory _tokenName, 
         string memory _tokenSymbol,
         address _initialOwner,
         address _minter
     ) 
-        ERC721(_tokenName, _tokenSymbol) 
-        Ownable(_initialOwner)
-        EIP712("NftReward-Domain", "1")
+        public 
+        initializer 
     {
+        __ERC721_init(_tokenName, _tokenSymbol);
+        __Ownable_init(_initialOwner);
+        __EIP712_init("NftReward-Domain", "1");
+        __UUPSUpgradeable_init();
         minter = _minter;
     }
 
@@ -194,6 +197,13 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
         _unpause();
     }
 
+    /**
+     * @notice Upgrades contract to new implementation
+     * @param newImplementation New implementation address
+     */
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
     //====================
     // Internal methods
     //====================
@@ -204,5 +214,25 @@ contract NftReward is ERC721, Ownable, Pausable, EIP712 {
      */
     function _baseURI() internal view override returns (string memory) {
         return baseUri;
+    }
+
+    //====================
+    // Overrides methods
+    //====================
+
+    /**
+     * @notice These methods are overriden because of `Context` contract from OpenZeppelin
+     */
+
+    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
+        return msg.data;
+    }
+
+    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
+        return msg.sender;
+    }
+
+    function _contextSuffixLength() internal pure override(Context, ContextUpgradeable) returns (uint256) {
+        return 0;
     }
 }

@@ -3,6 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {NftReward} from "../src/NftReward.sol";
+import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
 
 contract NftRewardTest is Test {
     NftReward nftReward;
@@ -16,7 +17,8 @@ contract NftRewardTest is Test {
 
     function setUp() public {
         vm.prank(owner);
-        nftReward = new NftReward(
+        nftReward = new NftReward();
+        nftReward.initialize(
             "NFT reward", // token name
             "RWD", // token symbol
             owner, // initial owner
