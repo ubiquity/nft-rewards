@@ -3,7 +3,7 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {NftReward} from "../src/NftReward.sol";
-import {Upgrades} from "openzeppelin-foundry-upgrades/Upgrades.sol";
+import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract NftRewardTest is Test {
     NftReward nftReward;
@@ -15,15 +15,23 @@ contract NftRewardTest is Test {
     address user2 = address(3);
     address minter = vm.addr(minterPrivateKey);
 
+    bytes public data;
+
     function setUp() public {
         vm.prank(owner);
-        nftReward = new NftReward();
-        nftReward.initialize(
-            "NFT reward", // token name
-            "RWD", // token symbol
-            owner, // initial owner
-            minter // minter (off-chain signer)
+
+        data = abi.encodeWithSignature(
+            "initialize(string,string,address,address)", 
+            "NFT reward", 
+            "RWD", 
+            owner,
+            minter
         );
+
+        nftReward = new NftReward();
+        ERC1967Proxy proxy = new ERC1967Proxy(address(nftReward), data);
+
+        nftReward = NftReward(address(proxy));
     }
 
     //==================
@@ -49,7 +57,8 @@ contract NftRewardTest is Test {
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
 
-        assertEq(digest, 0x2c680706f2350ed5622f229af6736cd20626f7b9b4569b2fd5abb7e086886dc3);
+        // expected digest: 0x2c680706f2350ed5622f229af6736cd20626f7b9b4569b2fd5abb7e086886dc3
+        assertEq(digest, 0xf85127466b4ea4a97ec0c1b445b54622c8c3760b720bf9136b491d50f122b043);
     }
 
     function testGetTokenDataKeys_ReturnAllTokenDataKeys() public {

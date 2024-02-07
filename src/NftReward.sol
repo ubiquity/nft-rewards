@@ -50,6 +50,15 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
     }
 
     /**
+     * @notice _disableInitializers in the constructor, 
+     * this prevents initialization of the implementation contract itself, 
+     * as extra protection to prevent an attacker from initializing it.
+     */
+    constructor() {
+        _disableInitializers();
+    }
+
+    /**
      * @notice Contract initializer (replaces constructor)
      * @param _tokenName NFT token name
      * @param _tokenSymbol NFT token symbol
