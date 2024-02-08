@@ -224,24 +224,4 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
     function _baseURI() internal view override returns (string memory) {
         return baseUri;
     }
-
-    //====================
-    // Overrides methods
-    //====================
-
-    /**
-     * @notice These methods are overriden because of `Context` contract from OpenZeppelin
-     */
-
-    function _msgData() internal pure override(ContextUpgradeable) returns (bytes calldata) {
-        return msg.data;
-    }
-
-    function _msgSender() internal view override(ContextUpgradeable) returns (address) {
-        return msg.sender;
-    }
-
-    function _contextSuffixLength() internal pure override(ContextUpgradeable) returns (uint256) {
-        return 0;
-    }
 }
