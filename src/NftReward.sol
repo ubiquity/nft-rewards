@@ -3,17 +3,17 @@ pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title NFT reward contract
  * @notice Allows NFT minter to sign off-chain mint requests for target users
  * who can later claim NFTs by minter's signature
  */
-contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Pausable, EIP712Upgradeable, UUPSUpgradeable {
+contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, PausableUpgradeable, EIP712Upgradeable, UUPSUpgradeable {
     /// @notice Base URI used for all of the tokens
     string public baseUri;
 
@@ -233,15 +233,15 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
      * @notice These methods are overriden because of `Context` contract from OpenZeppelin
      */
 
-    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
+    function _msgData() internal pure override(ContextUpgradeable) returns (bytes calldata) {
         return msg.data;
     }
 
-    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
+    function _msgSender() internal view override(ContextUpgradeable) returns (address) {
         return msg.sender;
     }
 
-    function _contextSuffixLength() internal pure override(Context, ContextUpgradeable) returns (uint256) {
+    function _contextSuffixLength() internal pure override(ContextUpgradeable) returns (uint256) {
         return 0;
     }
 }

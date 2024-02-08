@@ -57,7 +57,6 @@ contract NftRewardTest is Test {
         // get mint request digest which should be signed
         bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
 
-        // expected digest: 0x2c680706f2350ed5622f229af6736cd20626f7b9b4569b2fd5abb7e086886dc3
         assertEq(digest, 0xf85127466b4ea4a97ec0c1b445b54622c8c3760b720bf9136b491d50f122b043);
     }
 
