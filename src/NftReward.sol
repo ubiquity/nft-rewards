@@ -78,6 +78,7 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
         __Ownable_init(_initialOwner);
         __EIP712_init("NftReward-Domain", "1");
         __UUPSUpgradeable_init();
+        __Pausable_init();
         minter = _minter;
     }
 
