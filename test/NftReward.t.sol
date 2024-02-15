@@ -529,7 +529,7 @@ contract NftRewardTest is Test {
     }
 
     function testInvalidateNonce_ShouldInvalidateNonce() public {
-         // prepare arbitrary data keys
+        // prepare arbitrary data keys
         bytes32[] memory keys = new bytes32[](1);
         keys[0] = keccak256("GITHUB_ORGANIZATION_NAME"); 
         // prepare arbitrary data values
