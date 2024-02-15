@@ -74,8 +74,6 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
         public 
         initializer 
     {
-        require(_minter != address(0), "Minter cannot be zero address");
-        require(_initialOwner != address(0), "Initial owner cannot be zero address");
         __ERC721_init(_tokenName, _tokenSymbol);
         __Ownable_init(_initialOwner);
         __EIP712_init("NftReward-Domain", "1");
