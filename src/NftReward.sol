@@ -211,8 +211,16 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
      * @notice Upgrades contract to new implementation
      * @param newImplementation New implementation address
      */
-
     function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    /**
+     * @notice Invalidates nonce value to prevent mint request reusage
+     * @param _nonceValue Nonce value to invalidate
+     */
+    function invalidateNonce(uint256 _nonceValue) external onlyOwner {
+        require(!nonceRedeemed[_nonceValue], "Already minted");
+        nonceRedeemed[_nonceValue] = true;
+    }
 
     //====================
     // Internal methods
