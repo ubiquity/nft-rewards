@@ -16,7 +16,7 @@ contract NftRewardTest is Test {
     address minter = vm.addr(minterPrivateKey);
 
     bytes public data;
-
+    
     function setUp() public {
         vm.prank(owner);
 
@@ -31,6 +31,36 @@ contract NftRewardTest is Test {
         nftReward = new NftReward();
         ERC1967Proxy proxy = new ERC1967Proxy(address(nftReward), data);
 
+        nftReward = NftReward(address(proxy));
+    }
+
+    function testSetup_ShouldRevert_IfMinterIsZeroAddress() public {
+        vm.prank(owner);
+        data = abi.encodeWithSignature(
+            "initialize(string,string,address,address)", 
+            "NFT reward", 
+            "RWD", 
+            owner,
+            address(0)
+        );
+        nftReward = new NftReward();
+        vm.expectRevert("Minter cannot be zero address");
+        ERC1967Proxy proxy = new ERC1967Proxy(address(nftReward), data);
+        nftReward = NftReward(address(proxy));
+    }
+
+    function testSetup_ShouldRevert_IfOwnerIsZeroAddress() public {
+        vm.prank(owner);
+        data = abi.encodeWithSignature(
+            "initialize(string,string,address,address)", 
+            "NFT reward", 
+            "RWD", 
+            address(0),
+            minter
+        );
+        nftReward = new NftReward();
+        vm.expectRevert("Initial owner cannot be zero address");
+        ERC1967Proxy proxy = new ERC1967Proxy(address(nftReward), data);
         nftReward = NftReward(address(proxy));
     }
 
@@ -526,5 +556,11 @@ contract NftRewardTest is Test {
 
         // after
         assertFalse(nftReward.paused());
+    }
+
+    function testSetMinter_ShouldRevert_IfMinterIsZeroAddress() public {
+        vm.prank(owner);
+        vm.expectRevert("Minter cannot be zero address");
+        nftReward.setMinter(address(0));
     }
 }
