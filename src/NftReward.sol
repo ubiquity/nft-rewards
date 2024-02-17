@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
@@ -74,6 +74,8 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
         public 
         initializer 
     {
+        require(_minter != address(0), "Minter cannot be zero address");
+        require(_initialOwner != address(0), "Initial owner cannot be zero address");
         __ERC721_init(_tokenName, _tokenSymbol);
         __Ownable_init(_initialOwner);
         __EIP712_init("NftReward-Domain", "1");
@@ -197,6 +199,7 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
      * @param _newMinter New minter address
      */
     function setMinter(address _newMinter) external onlyOwner {
+        require(_newMinter != address(0), "Minter cannot be zero address");
         minter = _newMinter;
     }
 
