@@ -4,10 +4,10 @@ on:
   push:
     branches: [ development ]
     paths:
-      - '**.sol'
+      - 'src/**.sol'
   pull_request:
     paths:
-      - '**.sol'
+      - 'src/**.sol'
 
 jobs:
   analyze:
@@ -26,6 +26,7 @@ jobs:
         node-version: 16
         sarif: results.sarif
         fail-on: all
+        target: 'src/'
 
     - name: Upload SARIF file
       uses: github/codeql-action/upload-sarif@v3
