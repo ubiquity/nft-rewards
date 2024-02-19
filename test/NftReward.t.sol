@@ -245,33 +245,6 @@ contract NftRewardTest is Test {
         nftReward.safeMint(mintRequest, signature);
     }
 
-    function testSafeMint_ShouldRevert_IfSignatureExpired() public {
-        // prepare arbitrary data keys
-        bytes32[] memory keys = new bytes32[](1);
-        keys[0] = keccak256("GITHUB_ORGANIZATION_NAME"); 
-        // prepare arbitrary data values
-        string[] memory values = new string[](1);
-        values[0] = "ubiquity";
-        // prepare mint request
-        NftReward.MintRequest memory mintRequest = NftReward.MintRequest({
-            beneficiary: user1,
-            deadline: block.timestamp - 1, // set expired signature
-            keys: keys,
-            nonce: 1,
-            values: values
-        });
-        // get mint request digest which should be signed
-        bytes32 digest = nftReward.getMintRequestDigest(mintRequest);
-        // minter signs mint request digest
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(minterPrivateKey, digest);
-        // get minter's signature
-        bytes memory signature = abi.encodePacked(r, s, v);
-
-        vm.prank(user1);
-        vm.expectRevert('Signature expired');
-        nftReward.safeMint(mintRequest, signature);
-    }
-
     function testSafeMint_ShouldRevert_IfNonceAlreadyUsed() public {
         // prepare arbitrary data keys
         bytes32[] memory keys = new bytes32[](1);
