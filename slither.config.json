@@ -1,4 +1,5 @@
 {
     "filter_paths": "openzeppelin",
-    "detectors_to_exclude": "timestamp"
+    "detectors_to_exclude": "timestamp",
+    "exclude_informational": true
 }
