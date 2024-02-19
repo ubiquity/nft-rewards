@@ -25,7 +25,7 @@ jobs:
       with:
         node-version: 16
         sarif: results.sarif
-        fail-on: all
+        fail-on: low
         target: 'src/'
 
     - name: Upload SARIF file

@@ -152,6 +152,7 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
         // validation
         require(recover(mintRequest, signature) == minter, "Signed not by minter");
         require(msg.sender == mintRequest.beneficiary, "Not eligible");   
+        require(block.timestamp < mintRequest.deadline, "Signature expired");
         require(!nonceRedeemed[mintRequest.nonce], "Already minted");
         require(mintRequest.keys.length == mintRequest.values.length, "Key/value length mismatch");
         
