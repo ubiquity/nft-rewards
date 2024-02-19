@@ -4,10 +4,10 @@ on:
   push:
     branches: [ development ]
     paths:
-      - 'src/**.sol'
+      - '**.sol'
   pull_request:
     paths:
-      - 'src/**.sol'
+      - '**.sol'
 
 jobs:
   analyze:
