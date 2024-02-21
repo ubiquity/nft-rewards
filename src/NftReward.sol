@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts-upgradeable/utils/cryptography/EIP712Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
@@ -60,26 +60,28 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
 
     /**
      * @notice Contract initializer (replaces constructor)
-     * @param _tokenName NFT token name
-     * @param _tokenSymbol NFT token symbol
-     * @param _initialOwner Initial owner name
-     * @param _minter Minter address
+     * @param tokenName NFT token name
+     * @param tokenSymbol NFT token symbol
+     * @param initialOwner Initial owner name
+     * @param minterAddress Minter address
      */
     function initialize(
-        string memory _tokenName, 
-        string memory _tokenSymbol,
-        address _initialOwner,
-        address _minter
+        string memory tokenName, 
+        string memory tokenSymbol,
+        address initialOwner,
+        address minterAddress
     ) 
         public 
         initializer 
     {
-        __ERC721_init(_tokenName, _tokenSymbol);
-        __Ownable_init(_initialOwner);
+        require(minterAddress != address(0), "Minter cannot be zero address");
+        require(initialOwner != address(0), "Initial owner cannot be zero address");
+        __ERC721_init(tokenName, tokenSymbol);
+        __Ownable_init(initialOwner);
         __EIP712_init("NftReward-Domain", "1");
         __UUPSUpgradeable_init();
         __Pausable_init();
-        minter = _minter;
+        minter = minterAddress;
     }
 
     //==================
@@ -88,22 +90,22 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
 
     /**
      * @notice Returns mint request digest which should be signed by `minter`
-     * @param _mintRequest Mint request data
+     * @param mintRequest Mint request data
      * @return Mint request digest which should be signed by `minter`
      */
-    function getMintRequestDigest(MintRequest calldata _mintRequest) public view returns (bytes32) {
+    function getMintRequestDigest(MintRequest calldata mintRequest) public view returns (bytes32) {
         // for `string[]` array type we need to hash all the array values first
-        bytes32[] memory valuesHashed = new bytes32[](_mintRequest.values.length);
-        for (uint256 i = 0; i < _mintRequest.values.length; i++) {
-            valuesHashed[i] = keccak256(bytes(_mintRequest.values[i]));
+        bytes32[] memory valuesHashed = new bytes32[](mintRequest.values.length);
+        for (uint256 i = 0; i < mintRequest.values.length; i++) {
+            valuesHashed[i] = keccak256(bytes(mintRequest.values[i]));
         }
         // return final hash
         return _hashTypedDataV4(keccak256(abi.encode(
             keccak256("MintRequest(address beneficiary,uint256 deadline,bytes32[] keys,uint256 nonce,string[] values)"),
-            _mintRequest.beneficiary,
-            _mintRequest.deadline,
-            keccak256(abi.encodePacked(_mintRequest.keys)),
-            _mintRequest.nonce,
+            mintRequest.beneficiary,
+            mintRequest.deadline,
+            keccak256(abi.encodePacked(mintRequest.keys)),
+            mintRequest.nonce,
             keccak256(abi.encodePacked(valuesHashed))
         )));
     }
@@ -118,59 +120,59 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
 
     /**
      * @notice Returns signer of the mint request
-     * @param _mintRequest Mint request data
-     * @param _signature Minter signature
+     * @param mintRequest Mint request data
+     * @param signature Minter signature
      * @return Signer of the mint request
      */
     function recover(
-        MintRequest calldata _mintRequest, 
-        bytes calldata _signature
+        MintRequest calldata mintRequest, 
+        bytes calldata signature
     ) 
         public 
         view 
         returns (address) 
     {
-        bytes32 digest = getMintRequestDigest(_mintRequest);
-        address signer = ECDSA.recover(digest, _signature);
+        bytes32 digest = getMintRequestDigest(mintRequest);
+        address signer = ECDSA.recover(digest, signature);
         return signer;
     }
 
     /**
      * @notice Mints a reward NFT to beneficiary who provided a mint request with valid minter's signature
-     * @param _mintRequest Mint request data
-     * @param _signature Minter signature
+     * @param mintRequest Mint request data
+     * @param signature Minter signature
      */
     function safeMint(
-        MintRequest calldata _mintRequest,
-        bytes calldata _signature
+        MintRequest calldata mintRequest,
+        bytes calldata signature
     ) 
         public
         whenNotPaused
     {
         // validation
-        require(recover(_mintRequest, _signature) == minter, "Signed not by minter");
-        require(msg.sender == _mintRequest.beneficiary, "Not eligible");   
-        require(block.timestamp < _mintRequest.deadline, "Signature expired");
-        require(!nonceRedeemed[_mintRequest.nonce], "Already minted");
-        require(_mintRequest.keys.length == _mintRequest.values.length, "Key/value length mismatch");
+        require(recover(mintRequest, signature) == minter, "Signed not by minter");
+        require(msg.sender == mintRequest.beneficiary, "Not eligible");   
+        require(block.timestamp < mintRequest.deadline, "Signature expired");
+        require(!nonceRedeemed[mintRequest.nonce], "Already minted");
+        require(mintRequest.keys.length == mintRequest.values.length, "Key/value length mismatch");
         
         // mark nonce as used
-        nonceRedeemed[_mintRequest.nonce] = true;
+        nonceRedeemed[mintRequest.nonce] = true;
         
         // save arbitrary token data
-        uint256 keysCount = _mintRequest.keys.length;
+        uint256 keysCount = mintRequest.keys.length;
         for (uint256 i = 0; i < keysCount; i++) {
             // save data
-            tokenData[tokenIdCounter][_mintRequest.keys[i]] = _mintRequest.values[i];
+            tokenData[tokenIdCounter][mintRequest.keys[i]] = mintRequest.values[i];
             // save arbitrary token data key if not saved yet
-            if (!tokenDataKeyExists[_mintRequest.keys[i]]) {
-                tokenDataKeys.push(_mintRequest.keys[i]);
-                tokenDataKeyExists[_mintRequest.keys[i]] = true;
+            if (!tokenDataKeyExists[mintRequest.keys[i]]) {
+                tokenDataKeys.push(mintRequest.keys[i]);
+                tokenDataKeyExists[mintRequest.keys[i]] = true;
             }
         }
         
         // mint token to beneficiary
-        _safeMint(_mintRequest.beneficiary, tokenIdCounter++);
+        _safeMint(mintRequest.beneficiary, tokenIdCounter++);
     }
 
     //=================
@@ -186,18 +188,19 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
 
     /**
      * @notice Sets new base URI for all of the tokens
-     * @param _newBaseUri New base URI
+     * @param newBaseUri New base URI
      */
-    function setBaseUri(string memory _newBaseUri) external onlyOwner {
-        baseUri = _newBaseUri; 
+    function setBaseUri(string memory newBaseUri) external onlyOwner {
+        baseUri = newBaseUri; 
     }
 
     /**
      * @notice Sets new minter address (who can sign off-chain mint requests)
-     * @param _newMinter New minter address
+     * @param newMinter New minter address
      */
-    function setMinter(address _newMinter) external onlyOwner {
-        minter = _newMinter;
+    function setMinter(address newMinter) external onlyOwner {
+        require(newMinter != address(0), "Minter cannot be zero address");
+        minter = newMinter;
     }
 
     /**
@@ -215,11 +218,11 @@ contract NftReward is Initializable, ERC721Upgradeable, OwnableUpgradeable, Paus
 
     /**
      * @notice Invalidates nonce value to prevent mint request reusage
-     * @param _nonceValue Nonce value to invalidate
+     * @param nonceValue Nonce value to invalidate
      */
-    function invalidateNonce(uint256 _nonceValue) external onlyOwner {
-        require(!nonceRedeemed[_nonceValue], "Already minted");
-        nonceRedeemed[_nonceValue] = true;
+    function invalidateNonce(uint256 nonceValue) external onlyOwner {
+        require(!nonceRedeemed[nonceValue], "Already minted");
+        nonceRedeemed[nonceValue] = true;
     }
 
     //====================

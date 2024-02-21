@@ -1,0 +1,4 @@
+{
+    "filter_paths": "openzeppelin",
+    "detectors_to_exclude": "timestamp,solc-version"
+}
